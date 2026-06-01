@@ -2,6 +2,27 @@
 
 A personal well-being tracker where you log your mood and energy levels throughout the day, tag what influenced them, and see patterns over time. Built as the seed project for the **From Vibe Coding to Agentic Engineering** workshop.
 
+## How This Was Built — The Agentic Engineering Workflow
+
+The **Weekly Reflection** feature wasn't vibe-coded. It was built with a disciplined, repeatable agentic workflow where the human stays in the loop on *intent* and the agent owns *execution*. These are the techniques that made up the core of the process:
+
+### 1. Write a PRD (`write-a-prd`)
+Every feature starts as a **Product Requirements Document**, not a prompt. The agent interviews the user, explores the codebase to verify assumptions, sketches **deep modules** (lots of functionality behind a simple, testable interface), then writes a structured PRD to `prd/` covering Problem, Solution, User Stories, Implementation Decisions, Testing Decisions, and Out-of-Scope. This pins down the retention goal and sensitivity guardrails *before a line of code*.
+
+### 2. Grill Me (`grill-me`)
+Before committing to a plan, the agent **relentlessly interviews the user** one question at a time, walking down every branch of the design tree and resolving dependencies between decisions. Anything answerable by reading the code is resolved by exploration instead of asking. This is where the non-obvious calls get made (e.g. "a hard week is framed gently, never 'your worst week'").
+
+### 3. PRD to Issues (`prd-to-issues`)
+The PRD is decomposed into **tracer-bullet issues** — thin *vertical slices* that cut end-to-end through every layer (schema, API, UI, tests), not horizontal layers. Each issue is independently demoable, labelled **AFK** (agent can finish autonomously) or **HITL** (needs a human decision), with explicit "Blocked by" dependencies. Issues live as local markdown files in `issues/`.
+
+### 4. Ralph — the autonomous build loop (`.ralph/`)
+**Ralph** is the loop that drives the agent through the AFK issues unattended. Each iteration it: reads the open issues, picks the next task by priority (bugfixes → infra → tracer bullets → polish → refactors), checks out a clean branch, implements with **TDD**, runs **all four feedback loops** green (`pytest`, `mypy`, `vitest`, `tsc`), commits with decisions recorded, then moves the issue to `issues/done/`. Constrained to the repo, one task at a time, no subagents, no questions.
+
+### 5. TDD + deep modules (`tdd`, `improve-codebase-architecture`)
+Implementation follows **red → green → refactor** on both backend (pytest) and frontend (Vitest + React Testing Library), testing external behavior through public interfaces — never private helpers. Logic is pushed into **deep, isolated modules** (e.g. the pure `services/digest.py`) that are easy to test and rarely change.
+
+> **The loop in one line:** `write-a-prd` → `grill-me` → `prd-to-issues` → **Ralph** runs `tdd` per issue → feedback loops green → commit → `issues/done/`.
+
 ## What's Already Built
 
 - Quick mood + energy logging (emoji scale + 1–10 slider + optional note)
