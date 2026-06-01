@@ -10,6 +10,28 @@ A personal well-being tracker where you log your mood and energy levels througho
 - Calendar heatmap (color-coded days by average mood)
 - Entry history (scrollable, filterable list of past logs)
 
+## Weekly Reflection (Retention Feature)
+
+A retention-focused **Weekly Reflection** added on top of Pulse, built end-to-end with an AI coding agent. Available from the **Reflection** tab.
+
+**What it does**
+
+- **Logging streak**: a visible "don't break the chain" hook
+- **Week-over-week momentum**: shows whether mood is improving, steady, or gentler (never harsh)
+- **Adaptive reflection prompts**: supportive after hard weeks, celebratory after bright ones, encouraging when entries are sparse
+- **Opt-in sharing**: read-only digest links; private reflections stay private unless explicitly shared, and all shared text passes a sensitivity filter
+
+**Why it matters**
+
+It reframes analytics as care: the goal isn't more data, it's helping people gently notice patterns and keep coming back.
+
+**Sensitivity guardrails**
+
+- A hard week is framed gently ("a gentler week than last, that's okay"), never "your worst week"
+- Prompts after low-mood weeks are supportive, not corrective
+- Private reflections are never shared unless explicitly opted in
+- All shared text (notes + reflections) passes a deny-word filter
+
 ## Tech Stack
 
 | Layer     | Tech                          |
@@ -91,16 +113,18 @@ npx tsc --noEmit               # type checking
 ```
 ├── frontend/               # React + Vite + TypeScript
 │   ├── src/
-│   │   ├── pages/          # Dashboard, LogEntry, History
-│   │   ├── components/     # Reusable UI components
-│   │   └── lib/            # API client, types
+│   │   ├── pages/          # Dashboard, LogEntry, History, WeeklyReflection, SharedDigest
+│   │   ├── components/     # Reusable UI components (incl. DigestCard)
+│   │   └── lib/            # API client, types, reflectionAnswer (localStorage)
 │   └── tests/              # Vitest + React Testing Library tests
 ├── backend/                # Python FastAPI
 │   ├── app/
-│   │   ├── routes/         # API endpoints
+│   │   ├── routes/         # API endpoints (entries, stats, tags, digest)
+│   │   ├── services/       # Pure digest logic (digest.py)
 │   │   └── models/         # Pydantic models
 │   ├── tests/              # pytest tests
-│   ├── storage.py          # File-based JSON storage
+│   ├── storage.py          # File-based JSON storage (entries)
+│   ├── storage_digest.py   # Cached digests + share tokens
 │   └── seed.py             # Sample data generator
 ├── briefs/                 # Feature request briefs for the workshop
 │   ├── 01-correlation-insights.md
@@ -136,6 +160,10 @@ Each brief is designed to produce a rich grilling/design session with non-obviou
 | GET    | `/api/stats/weekly`       | Weekly averages (last 8 weeks)  |
 | GET    | `/api/stats/heatmap`      | Calendar heatmap data           |
 | GET    | `/api/tags`               | List all available tags         |
+| GET    | `/api/digest/weekly`      | Weekly reflection digest (streak + momentum) |
+| POST   | `/api/digest/weekly/share`| Mint a read-only share link     |
+| GET    | `/api/digest/shared/{token}` | Public, read-only shared digest |
+| DELETE | `/api/digest/share/{token}` | Revoke a share                |
 
 ---
 
