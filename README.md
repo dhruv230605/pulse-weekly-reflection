@@ -2,16 +2,16 @@
 
 > **A personal well-being tracker that turns a week of mood logs into a gentle, shareable story — built end-to-end by an AI agent running a disciplined engineering loop, not vibe-coded.**
 
-Log your mood and energy throughout the day, tag what influenced them, and see patterns over time. The standout feature — **[Weekly Reflection](#-weekly-reflection-the-headline-retention-feature)** — reframes analytics as *care*: it's designed to help people gently notice patterns and keep coming back, with mental-health-grade sensitivity guardrails. Built as the seed project for the **From Vibe Coding to Agentic Engineering** workshop.
+Log your mood and energy throughout the day, tag what influenced them, and see patterns over time. The standout feature — **[Weekly Reflection](#weekly-reflection-retention-feature)** — reframes analytics as *care*: it's designed to help people gently notice patterns and keep coming back, with sensitivity guardrails throughout. Built as the seed project for the **From Vibe Coding to Agentic Engineering** workshop.
 
-### 🏆 Why this is a strong hackathon entry — at a glance
+### At a glance
 
-- **A real retention feature, not a toy** — streaks, week-over-week momentum, adaptive prompts, and opt-in sharing, all wired UI→API→tests.
-- **Sensitivity done right** — the app is *strict on its own words* and *gentle with the user's*; your lowest day is never shared.
-- **Provable quality** — **43 backend + 46 frontend tests**, with `mypy` and `tsc` clean. Every change gates on **four green feedback loops**.
-- **A reproducible process, not luck** — the entire `.agents/skills` loop (`grill-me` → architecture review → PRD → tracer-bullet issues → `rubber-duck` → TDD) is documented and was re-run as a *review engine* that found and fixed a broken build on `main`. Artifacts live in `prd/` and `issues/done/`.
+- **Retention feature, fully wired** — streaks, week-over-week momentum, adaptive prompts, and opt-in sharing, all connected UI→API→tests.
+- **Two-sided sensitivity model** — the app is strict on its *own* words and gentle with the *user's*; the user's lowest day is never shared.
+- **Test coverage** — 43 backend + 46 frontend tests, with `mypy` and `tsc` clean. Every change gates on four feedback loops.
+- **Reproducible process** — the entire `.agents/skills` loop (`grill-me` → architecture review → PRD → tracer-bullet issues → `rubber-duck` → TDD) is documented and was re-run as a *review engine* that found and fixed a broken build on `main`. Artifacts live in `prd/` and `issues/done/`.
 
-**Fastest way to evaluate:** run both servers ([Getting Started](#getting-started)), open the **Reflection** tab, mint a share link, then read [`backend/app/services/digest.py`](backend/app/services/digest.py) — the entire feature's brain in one pure, testable module.
+**Where to start:** run both servers ([Getting Started](#getting-started)), open the **Reflection** tab, mint a share link, then read [`backend/app/services/digest.py`](backend/app/services/digest.py) — the entire feature's logic in one pure, testable module.
 
 
 ## How This Was Built — The Agentic Engineering Workflow
@@ -58,7 +58,7 @@ The same loop is also a **review engine**, not just a build engine. We re-ran it
 | Frontend tests | `vitest` | 46 ✅ | **46 ✅** |
 | Frontend types | `tsc` | ✅ | **✅** |
 
-> The headline: the agentic loop didn't just *add* a feature — re-running it **found a broken build on `main` and a guardrail that was silently censoring users' honest words about their own feelings**, then fixed both with tests to lock them in.
+> Re-running the loop didn't just *add* a feature — it **found a broken build on `main` and a guardrail that was silently rejecting users' honest words about their own feelings**, then fixed both with tests to lock them in.
 
 ## What's Already Built
 
@@ -68,11 +68,11 @@ The same loop is also a **review engine**, not just a build engine. We re-ran it
 - Calendar heatmap (color-coded days by average mood)
 - Entry history (scrollable, filterable list of past logs)
 
-## ⭐ Weekly Reflection (the headline retention feature)
+## Weekly Reflection (Retention Feature)
 
-> **One-liner for judges:** Pulse takes a week of raw mood/energy logs and turns them into a *gentle, shareable story* — analytics reframed as **care**. The goal isn't more data; it's helping someone notice their own patterns and want to come back.
+> Pulse takes a week of raw mood/energy logs and turns them into a *gentle, shareable story* — analytics reframed as **care**. The goal isn't more data; it's helping someone notice their own patterns and want to come back.
 
-Available from the **Reflection** tab. Every piece of logic lives in one pure, fully-tested module (`backend/app/services/digest.py`) behind a tiny interface — a textbook **deep module**.
+Available from the **Reflection** tab. Every piece of logic lives in one pure, fully-tested module (`backend/app/services/digest.py`) behind a small interface — a **deep module** (lots of behaviour, minimal surface).
 
 ### Feature catalogue (everything implemented)
 
@@ -91,9 +91,9 @@ Available from the **Reflection** tab. Every piece of logic lives in one pure, f
 | 11 | **Private reflections** | The user's written reflection is stored client-side and is **never** included in a share unless they explicitly opt in (`include_reflection`). | `reflection_to_store` |
 | 12 | **Revoke any share** | `DELETE /digest/share/{token}` instantly kills a link. | revoke route |
 
-### 🛡️ Sensitivity guardrails (the part we're proudest of)
+### 🛡️ Sensitivity guardrails
 
-Mental-wellbeing data is the most sensitive data a product can hold. The guardrails are deliberately **two-sided**, and getting this split right was the single most valuable outcome of the review loop:
+Mental-wellbeing data is among the most sensitive data a product can hold. The guardrails are deliberately **two-sided**:
 
 - **The app polices its *own* voice, strictly.** `DENY_WORDS` (e.g. *worst, burnout, anxious, should, must*) are scrubbed from app-generated narrative so Pulse never labels a hard week "your worst" or hands out clinical/prescriptive language.
 - **The app does *not* police the user's feelings.** Ordinary emotional vocabulary about your own week — "I felt **anxious** but pushed through", "I **should** rest more" — is **yours to share**. The earlier build wrongly hard-rejected these; we fixed it.
@@ -101,7 +101,7 @@ Mental-wellbeing data is the most sensitive data a product can hold. The guardra
 - **Your lowest day is private by construction** — stripped from shared snapshots at mint and again on read (defence in depth for old links).
 - **Sharing is opt-in, snapshot-based, noindex, and expiring.** Nothing is shared by default; links can't be crawled and die after 30 days.
 
-> This is the whole thesis in one design decision: *be hard on the machine's words, gentle with the human's.*
+> The design principle in one line: *be strict with the machine's words, gentle with the human's.*
 
 ## Tech Stack
 
