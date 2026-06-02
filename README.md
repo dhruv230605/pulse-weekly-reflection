@@ -2,6 +2,8 @@
 
 > **A personal well-being tracker that turns a week of mood logs into a gentle, shareable story — built end-to-end by an AI agent running a disciplined engineering loop, not vibe-coded.**
 
+**Link to Video:** https://microsoftapc-my.sharepoint.com/:v:/g/personal/t-dhruvjain_microsoft_com/IQD9Co3hfFFbQoIJKwuGGzlxASE6pkwR9VnzymKarqSX_Ec?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJTdHJlYW1XZWJBcHAiLCJyZWZlcnJhbFZpZXciOiJTaGFyZURpYWxvZy1MaW5rIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXcifX0%3D&e=rOKgh3
+
 Log your mood and energy throughout the day, tag what influenced them, and see patterns over time. The standout feature — **[Weekly Reflection](#weekly-reflection-retention-feature)** — reframes analytics as *care*: it's designed to help people gently notice patterns and keep coming back, with sensitivity guardrails throughout. Built as the seed project for the **From Vibe Coding to Agentic Engineering** workshop.
 
 ### At a glance
