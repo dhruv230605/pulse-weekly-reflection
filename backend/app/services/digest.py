@@ -6,13 +6,17 @@ retention helpers (week-over-week momentum, logging streak, adaptive
 reflection prompt) layered on top per the Weekly Reflection brief.
 """
 
+import re
 from collections import Counter
 from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from ..models.entry import Entry
 
-# Words we refuse to emit in any narrative — applies to templates AND user text.
+# Words the APP refuses to emit in its OWN generated narrative. This keeps the
+# summary gentle — a hard week is never labelled "your worst" or framed in
+# clinical terms. It does NOT police the user's own words about their own
+# feelings (see ABUSIVE_WORDS / contains_unsafe_shared_text for that).
 DENY_WORDS = {
     "burnout",
     "burnt out",
@@ -28,6 +32,22 @@ DENY_WORDS = {
     "should",
     "must",
     "ought to",
+}
+
+# Narrow safety net for USER-authored text that gets shared with someone else
+# (a sender note or an opted-in reflection). We only block language that is
+# abusive or harassing toward the recipient — ordinary emotional vocabulary a
+# person uses about their own week ("anxious", "rough", "I should rest") is
+# theirs to share and is intentionally NOT screened.
+ABUSIVE_WORDS = {
+    "asshole",
+    "bitch",
+    "bastard",
+    "moron",
+    "retard",
+    "scumbag",
+    "shut up",
+    "go to hell",
 }
 
 REFLECTION_PROMPT = "What would you do differently next week?"
@@ -142,13 +162,23 @@ def _classify_quality(avg_mood: Optional[float], trend: Optional[str]) -> str:
     return "mixed"
 
 
-def _contains_deny_word(text: str) -> bool:
+def contains_unsafe_shared_text(text: str) -> bool:
+    """True if user-authored, to-be-shared text contains abusive/harassing
+    language aimed at the recipient.
+
+    Uses word-boundary matching so innocuous words aren't caught as substrings
+    (e.g. 'skill' is not 'kill', 'classic' is not an insult). Ordinary emotional
+    vocabulary is deliberately allowed — this is a recipient-safety net, not a
+    censor of the user's feelings.
+    """
     lower = (text or "").lower()
-    return any(w in lower for w in DENY_WORDS)
+    return any(
+        re.search(r"\b" + re.escape(w) + r"\b", lower) for w in ABUSIVE_WORDS
+    )
 
 
 def _scrub(text: str) -> str:
-    """Remove any deny-word occurrence, conservatively."""
+    """Remove any app deny-word occurrence from app-generated narrative."""
     for w in DENY_WORDS:
         text = text.replace(w, "").replace(w.capitalize(), "")
     return " ".join(text.split())
@@ -192,7 +222,7 @@ def _render_template_narrative(facts: dict) -> str:
     top_tag = facts["top_tags"][0]["tag"] if facts["top_tags"] else None
     signal = facts.get("highlight_signal", "mood")
 
-    parts: list[str] = []
+    parts = []
     if quality == "great":
         parts.append(f"This week landed in a good place — {n} entries logged.")
         if best:
@@ -440,8 +470,3 @@ def build_digest(entries: list[Entry], week_start: date) -> dict:
     facts["narrative"] = _render_template_narrative(facts)
     facts["narrative_source"] = "template"
     return facts
-
-
-def safe_narrative(text: str) -> bool:
-    """True when text is non-empty and free of deny words."""
-    return not _contains_deny_word(text) and len(text.strip()) > 0

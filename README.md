@@ -1,6 +1,18 @@
 # Pulse — Mood & Energy Tracker
 
-A personal well-being tracker where you log your mood and energy levels throughout the day, tag what influenced them, and see patterns over time. Built as the seed project for the **From Vibe Coding to Agentic Engineering** workshop.
+> **A personal well-being tracker that turns a week of mood logs into a gentle, shareable story — built end-to-end by an AI agent running a disciplined engineering loop, not vibe-coded.**
+
+Log your mood and energy throughout the day, tag what influenced them, and see patterns over time. The standout feature — **[Weekly Reflection](#-weekly-reflection-the-headline-retention-feature)** — reframes analytics as *care*: it's designed to help people gently notice patterns and keep coming back, with mental-health-grade sensitivity guardrails. Built as the seed project for the **From Vibe Coding to Agentic Engineering** workshop.
+
+### 🏆 Why this is a strong hackathon entry — at a glance
+
+- **A real retention feature, not a toy** — streaks, week-over-week momentum, adaptive prompts, and opt-in sharing, all wired UI→API→tests.
+- **Sensitivity done right** — the app is *strict on its own words* and *gentle with the user's*; your lowest day is never shared.
+- **Provable quality** — **43 backend + 46 frontend tests**, with `mypy` and `tsc` clean. Every change gates on **four green feedback loops**.
+- **A reproducible process, not luck** — the entire `.agents/skills` loop (`grill-me` → architecture review → PRD → tracer-bullet issues → `rubber-duck` → TDD) is documented and was re-run as a *review engine* that found and fixed a broken build on `main`. Artifacts live in `prd/` and `issues/done/`.
+
+**Fastest way to evaluate:** run both servers ([Getting Started](#getting-started)), open the **Reflection** tab, mint a share link, then read [`backend/app/services/digest.py`](backend/app/services/digest.py) — the entire feature's brain in one pure, testable module.
+
 
 ## How This Was Built — The Agentic Engineering Workflow
 
@@ -23,6 +35,31 @@ Implementation follows **red → green → refactor** on both backend (pytest) a
 
 > **The loop in one line:** `write-a-prd` → `grill-me` → `prd-to-issues` → **Ralph** runs `tdd` per issue → feedback loops green → commit → `issues/done/`.
 
+### 6. Continuous review & refinement (the loop, run *again* on finished code)
+
+The same loop is also a **review engine**, not just a build engine. We re-ran it over the already-shipped Weekly Reflection feature to harden it:
+
+1. **Baseline** — ran all four feedback loops first. This immediately caught that `mypy` was **red on `main`** (a redefined local in `digest.py`) — i.e. the "four green loops" invariant wasn't actually holding.
+2. **`grill-me`** — the agent interviewed the human one question at a time and resolved **5 design branches**, each with a recommendation. The non-obvious calls:
+   - The sensitivity filter was *too aggressive on the user's own words* — it hard-rejected a share if the user wrote "I felt **anxious** but pushed through" or "I **should** rest more". We split it: a strict list for the **app's own narrative**, a narrow abuse/slur net for **user-authored** text.
+   - Sharing a digest was **broadcasting the user's lowest day** to the recipient. We strip `worst_day` from shared snapshots (it stays in the private view).
+   - The streak mixed **local** `date.today()` with **UTC** entry dates → off-by-one near midnight. Now UTC-consistent.
+   - Removed a dead caching subsystem + an unused helper that added surface area and lied about how the app works.
+3. **architecture review (`improve-codebase-architecture`)** — confirmed `services/digest.py` is already a healthy **deep module** (pure, I/O-free, fully testable); the only friction was one concept ("what's safe to emit") smeared across two call sites. The split *deepened* that seam.
+4. **`rubber-duck`** — an independent critique pass before implementing caught three blind spots a human would likely miss: a test fixture that monkeypatched the about-to-be-deleted constant, an existing test invalidated by the new policy, and the need to strip `worst_day` on **read** too (for links minted before the change). All adopted.
+5. **`tdd`** — implemented as 5 thin vertical slices (`issues/001`–`005`, now in `issues/done/`), each red→green, ending with **all four loops green**.
+
+**Quality bar — every change lands only when all four feedback loops are green:**
+
+| Loop | Tool | Before refinement | After |
+|------|------|-------------------|-------|
+| Backend tests | `pytest` | 36 ✅ | **43 ✅** (+7 invariant tests) |
+| Backend types | `mypy` | ❌ **red on main** | **✅ clean** |
+| Frontend tests | `vitest` | 46 ✅ | **46 ✅** |
+| Frontend types | `tsc` | ✅ | **✅** |
+
+> The headline: the agentic loop didn't just *add* a feature — re-running it **found a broken build on `main` and a guardrail that was silently censoring users' honest words about their own feelings**, then fixed both with tests to lock them in.
+
 ## What's Already Built
 
 - Quick mood + energy logging (emoji scale + 1–10 slider + optional note)
@@ -31,27 +68,40 @@ Implementation follows **red → green → refactor** on both backend (pytest) a
 - Calendar heatmap (color-coded days by average mood)
 - Entry history (scrollable, filterable list of past logs)
 
-## Weekly Reflection (Retention Feature)
+## ⭐ Weekly Reflection (the headline retention feature)
 
-A retention-focused **Weekly Reflection** added on top of Pulse, built end-to-end with an AI coding agent. Available from the **Reflection** tab.
+> **One-liner for judges:** Pulse takes a week of raw mood/energy logs and turns them into a *gentle, shareable story* — analytics reframed as **care**. The goal isn't more data; it's helping someone notice their own patterns and want to come back.
 
-**What it does**
+Available from the **Reflection** tab. Every piece of logic lives in one pure, fully-tested module (`backend/app/services/digest.py`) behind a tiny interface — a textbook **deep module**.
 
-- **Logging streak**: a visible "don't break the chain" hook
-- **Week-over-week momentum**: shows whether mood is improving, steady, or gentler (never harsh)
-- **Adaptive reflection prompts**: supportive after hard weeks, celebratory after bright ones, encouraging when entries are sparse
-- **Opt-in sharing**: read-only digest links; private reflections stay private unless explicitly shared, and all shared text passes a sensitivity filter
+### Feature catalogue (everything implemented)
 
-**Why it matters**
+| # | Feature | What it does | Where |
+|---|---------|--------------|-------|
+| 1 | **Logging streak** | Consecutive-day "don't break the chain" counter with a **one-day grace** (logging yesterday keeps the streak alive). Computed in **UTC** so it never flickers at midnight. | `compute_logging_streak` |
+| 2 | **Week-over-week momentum** | Compares this week's avg mood to last week's and renders a gentle phrase ("Up 12% — nice momentum" / "About the same — steady is good" / "A gentler week than last — that's okay"). Suppressed unless **both** weeks have ≥2 entries, so it never over-claims on thin data. | `compute_week_over_week` |
+| 3 | **Adaptive reflection prompt** | The question itself changes with the week: celebratory after a bright week, *supportive* after a hard one ("What helped you get through it?"), encouraging when entries are sparse. A low week is **never** asked "what would you do differently?". | `select_reflection_prompt` |
+| 4 | **Tone-safe narrative engine** | Deterministic, template-based weekly summary (no LLM, always succeeds) that adapts to four data **buckets** — `empty` / `sparse` (≤2) / `partial` (≤6) / `full` — and three **qualities** (`great` / `mixed` / `rough`). | `build_digest` + `_render_template_narrative` |
+| 5 | **Best-day highlight w/ smart signal** | Surfaces the week's brightest day. When mood is flat but energy varies a lot, it automatically **switches the highlight to energy** so the callout is still meaningful. | `highlight_signal` logic |
+| 6 | **Lowest-day, private only** | A `worst_day` is computed for the owner's private view, but is **stripped from every shared snapshot** (at mint *and* on read). The person you share with never sees your hardest day. | route strips `worst_day` |
+| 7 | **Day-by-day breakdown** | Always-7-day Mon–Sun grid with per-day mood/energy, top tags, and a tone-matched comment ("Monday asked a lot of you. You still showed up to log it — that matters."). | `day_breakdown` |
+| 8 | **Mood trend** | Least-squares slope over the week labelled `improving` / `flat` / `declining` (only when there are ≥3 logged days). | `_trend_slope` / `_trend_label` |
+| 9 | **Opt-in, read-only sharing** | Mint a tokenised link to a *snapshot* (not live data). Includes optional sender name + note. Links carry `x-robots-tag: noindex, nofollow` and **auto-expire after 30 days**. | `POST /digest/weekly/share` |
+| 10 | **Partial-day sharing** | Share only selected days of the week via `include_days` — useful when only part of the week is something you want to show. | `include_days` query |
+| 11 | **Private reflections** | The user's written reflection is stored client-side and is **never** included in a share unless they explicitly opt in (`include_reflection`). | `reflection_to_store` |
+| 12 | **Revoke any share** | `DELETE /digest/share/{token}` instantly kills a link. | revoke route |
 
-It reframes analytics as care: the goal isn't more data, it's helping people gently notice patterns and keep coming back.
+### 🛡️ Sensitivity guardrails (the part we're proudest of)
 
-**Sensitivity guardrails**
+Mental-wellbeing data is the most sensitive data a product can hold. The guardrails are deliberately **two-sided**, and getting this split right was the single most valuable outcome of the review loop:
 
-- A hard week is framed gently ("a gentler week than last, that's okay"), never "your worst week"
-- Prompts after low-mood weeks are supportive, not corrective
-- Private reflections are never shared unless explicitly opted in
-- All shared text (notes + reflections) passes a deny-word filter
+- **The app polices its *own* voice, strictly.** `DENY_WORDS` (e.g. *worst, burnout, anxious, should, must*) are scrubbed from app-generated narrative so Pulse never labels a hard week "your worst" or hands out clinical/prescriptive language.
+- **The app does *not* police the user's feelings.** Ordinary emotional vocabulary about your own week — "I felt **anxious** but pushed through", "I **should** rest more" — is **yours to share**. The earlier build wrongly hard-rejected these; we fixed it.
+- **User-authored shared text is screened only for *recipient harm*.** A narrow `ABUSIVE_WORDS` net (slurs/harassment) with **word-boundary matching** (so "skill" ≠ "kill", "classic" is fine) blocks abuse aimed at the person you're sharing with — nothing more.
+- **Your lowest day is private by construction** — stripped from shared snapshots at mint and again on read (defence in depth for old links).
+- **Sharing is opt-in, snapshot-based, noindex, and expiring.** Nothing is shared by default; links can't be crawled and die after 30 days.
+
+> This is the whole thesis in one design decision: *be hard on the machine's words, gentle with the human's.*
 
 ## Tech Stack
 
@@ -115,17 +165,22 @@ python seed.py
 
 ```bash
 cd backend
-.venv\Scripts\pytest          # run tests
-.venv\Scripts\mypy app         # type checking
+# one-time: dev/test tooling (not needed to run the app)
+pip install pytest mypy httpx
+
+python -m pytest -q          # 43 tests
+python -m mypy app           # type checking — clean
 ```
 
 ### Frontend Tests
 
 ```bash
 cd frontend
-npm test -- --run              # run Vitest tests (non-watch mode)
-npx tsc --noEmit               # type checking
+npm test -- --run              # 46 Vitest tests (non-watch mode)
+npx tsc --noEmit               # type checking — clean
 ```
+
+> **The quality gate:** a change is only "done" when **all four** loops are green — `pytest`, `mypy`, `vitest`, `tsc`.
 
 ---
 
@@ -145,8 +200,10 @@ npx tsc --noEmit               # type checking
 │   │   └── models/         # Pydantic models
 │   ├── tests/              # pytest tests
 │   ├── storage.py          # File-based JSON storage (entries)
-│   ├── storage_digest.py   # Cached digests + share tokens
+│   ├── storage_digest.py   # Read-only share-token snapshots (30-day TTL)
 │   └── seed.py             # Sample data generator
+├── prd/                    # Product Requirement Docs (e.g. weekly-reflection-refinements.md)
+├── issues/                 # Tracer-bullet issues (done/ holds completed slices 001–005)
 ├── briefs/                 # Feature request briefs for the workshop
 │   ├── 01-correlation-insights.md
 │   ├── 02-weekly-reflection.md

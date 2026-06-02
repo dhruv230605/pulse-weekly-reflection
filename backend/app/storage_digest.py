@@ -1,7 +1,6 @@
-"""JSON persistence for cached weekly digests and share tokens.
+"""JSON persistence for weekly-digest share tokens.
 
-Two files under `backend/.data/`:
-  - `digests.json` : {week_start: digest_dict}
+One file under `backend/.data/`:
   - `shares.json`  : {token: {snapshot, sender_*, reflection, shared_days, ...}}
 """
 
@@ -14,7 +13,6 @@ from pathlib import Path
 from typing import Optional
 
 DATA_DIR = Path(__file__).parent.parent / ".data"
-DIGESTS_FILE = DATA_DIR / "digests.json"
 SHARES_FILE = DATA_DIR / "shares.json"
 
 SHARE_TTL_DAYS = 30
@@ -22,8 +20,6 @@ SHARE_TTL_DAYS = 30
 
 def _ensure() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    if not DIGESTS_FILE.exists():
-        DIGESTS_FILE.write_text("{}", encoding="utf-8")
     if not SHARES_FILE.exists():
         SHARES_FILE.write_text("{}", encoding="utf-8")
 
@@ -36,25 +32,6 @@ def _read(path: Path) -> dict:
 def _write(path: Path, data: dict) -> None:
     _ensure()
     path.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
-
-
-# ---------- digests ----------
-
-def get_cached_digest(week_start: str) -> Optional[dict]:
-    return _read(DIGESTS_FILE).get(week_start)
-
-
-def save_digest(digest: dict) -> None:
-    data = _read(DIGESTS_FILE)
-    data[digest["week_start"]] = digest
-    _write(DIGESTS_FILE, data)
-
-
-def invalidate_digest(week_start: str) -> None:
-    data = _read(DIGESTS_FILE)
-    if week_start in data:
-        del data[week_start]
-        _write(DIGESTS_FILE, data)
 
 
 # ---------- shares ----------

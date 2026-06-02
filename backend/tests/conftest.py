@@ -20,7 +20,6 @@ def _isolated_storage(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(storage, "ENTRIES_FILE", entries_file)
     # Isolate digest/share persistence too (separate files under the same temp).
     monkeypatch.setattr(storage_digest, "DATA_DIR", data_dir)
-    monkeypatch.setattr(storage_digest, "DIGESTS_FILE", data_dir / "digests.json")
     monkeypatch.setattr(storage_digest, "SHARES_FILE", data_dir / "shares.json")
 
 

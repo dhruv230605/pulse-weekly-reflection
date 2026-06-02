@@ -6,7 +6,7 @@
 - DELETE /api/digest/share/{token}     → revoke a share
 """
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, Response
@@ -19,7 +19,7 @@ from ..services.digest import (
     compute_week_over_week,
     most_recent_completed_week_start,
 )
-from ..services.digest import _contains_deny_word  # noqa: E402
+from ..services.digest import contains_unsafe_shared_text  # noqa: E402
 from ..storage import list_entries
 
 router = APIRouter()
@@ -53,7 +53,9 @@ def weekly_digest(week_start: Optional[str] = Query(None, description="YYYY-MM-D
     all_entries = list_entries()
 
     digest["week_over_week"] = compute_week_over_week(week_entries, last_week_entries)
-    digest["streak"] = compute_logging_streak(all_entries, date.today())
+    digest["streak"] = compute_logging_streak(
+        all_entries, datetime.now(timezone.utc).date()
+    )
     return digest
 
 
@@ -99,22 +101,26 @@ def create_weekly_share(
         filtered = [e for e in week_entries if str(e.timestamp.date()) in shared_days]
         snapshot = build_digest(filtered, ws)
 
-    # Screen any sender note for deny words (sensitivity guardrail).
-    if body.sender_note and _contains_deny_word(body.sender_note):
+    # Screen any sender note for abusive language (recipient safety guardrail).
+    if body.sender_note and contains_unsafe_shared_text(body.sender_note):
         raise HTTPException(
             status_code=400,
             detail="That note has wording we can't include — try rephrasing.",
         )
 
-    # Private reflection is shared ONLY when explicitly opted in, and screened.
+    # Private reflection is shared ONLY when explicitly opted in, and screened
+    # for abusive language (the user's own feelings are otherwise theirs to share).
     reflection_to_store: Optional[str] = None
     if body.include_reflection and (body.reflection_text or "").strip():
-        if _contains_deny_word(body.reflection_text or ""):
+        if contains_unsafe_shared_text(body.reflection_text or ""):
             raise HTTPException(
                 status_code=400,
                 detail="That reflection has wording we can't include — try rephrasing.",
             )
         reflection_to_store = (body.reflection_text or "").strip()
+
+    # Shared digests carry only affirming highlights — never the lowest day.
+    snapshot = {**snapshot, "worst_day": None}
 
     record = storage_digest.create_share(
         snapshot,
@@ -137,6 +143,9 @@ def get_shared_digest(token: str, response: Response):
     snapshot = dict(record["snapshot"])
     snapshot.pop("narrative_source", None)
     snapshot.pop("generated_at", None)
+    # Defense in depth: never surface a lowest day in a shared view, even for
+    # snapshots minted before worst_day was stripped at share time.
+    snapshot["worst_day"] = None
     snapshot.update(
         {
             "sender_name": record.get("sender_name"),
