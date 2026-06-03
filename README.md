@@ -4,7 +4,7 @@
 
 **Link to Design Document:** https://microsoftapc-my.sharepoint.com/:w:/g/personal/t-dhruvjain_microsoft_com/IQBV9_j9iESIS6ryVRo_NoMgAbS2JeiURTZ3PIy9p8bEX0E?e=J1WrDm
 
-**Link to Video:** https://microsoftapc-my.sharepoint.com/:v:/g/personal/t-dhruvjain_microsoft_com/IQD9Co3hfFFbQoIJKwuGGzlxASE6pkwR9VnzymKarqSX_Ec?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJTdHJlYW1XZWJBcHAiLCJyZWZlcnJhbFZpZXciOiJTaGFyZURpYWxvZy1MaW5rIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXcifX0%3D&e=rOKgh3
+**Link to Video:** https://microsoftapc-my.sharepoint.com/:v:/g/personal/t-dhruvjain_microsoft_com/IQD9Co3hfFFbQoIJKwuGGzlxASE6pkwR9VnzymKarqSX_Ec
 
 Log your mood and energy throughout the day, tag what influenced them, and see patterns over time. The standout feature — **[Weekly Reflection](#weekly-reflection-retention-feature)** — reframes analytics as *care*: it's designed to help people gently notice patterns and keep coming back, with sensitivity guardrails throughout. Built as the seed project for the **From Vibe Coding to Agentic Engineering** workshop.
 
